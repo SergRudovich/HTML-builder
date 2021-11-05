@@ -81,7 +81,7 @@ async function getComponents() {
   try {
     const files = await readdir(htmlComponentsPath, { withFileTypes: true });
     for (const file of files) {
-      if (file.isFile()) {
+      if (file.isFile() && (file.name.substring(file.name.length - 5)) === '.html') {
         componentData = await readFile(path.resolve(htmlComponentsPath, file.name));
         componentName = file.name.replace(/.html/g, '');
         components[componentName] = componentData.toString();
@@ -100,11 +100,9 @@ function build(template) {
         components[component]
       );
     }
-    if (template.match(new RegExp('{{(.*?)}}', 'g'))) {
+    if (template.match(new RegExp('{{(.*?)}}', 'g')))
       console.log('not all componets build coz of componet absent');
-    } else {
-      writeFile(dstHtmlPath, template).then(res('build successfully!'));
-    }
+    writeFile(dstHtmlPath, template).then(res('build successfully!'));
   });
 }
 
