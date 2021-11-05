@@ -6,12 +6,16 @@ const srcAssetsPath = path.resolve(__dirname, 'assets');
 const dstStylePath = path.resolve(__dirname, 'project-dist', 'style.css');
 const dstHtmlPath = path.resolve(__dirname, 'project-dist', 'index.html');
 const srcStylePath = path.resolve(__dirname, 'styles');
-const srcHtmlPath = path.resolve(__dirname, 'template.html');
+const htmlTemplatePath = path.resolve(__dirname, 'template.html');
+const htmlComponentsPath = path.resolve(__dirname, 'components');
 const bundleArr = [];
+const components = {};
+let htmlTemplate = '';
 
-mkDir(dstDirPath);
-copyDir(srcAssetsPath, path.resolve(dstDirPath, 'assets'));
-mergeStyles(srcStylePath, dstStylePath);
+mkDir(dstDirPath)
+  .then(copyDir(srcAssetsPath, path.resolve(dstDirPath, 'assets')))
+  .then(mergeStyles(srcStylePath, dstStylePath))
+  .then(buildHtml());
 
 async function mkDir(dirPath) {
   try {
@@ -28,7 +32,7 @@ async function mkDir(dirPath) {
       await mkdir(dirPath, { recursive: true });
     }
   } catch (err) {
-    // console.error(err);
+    err;
   }
 }
 
@@ -68,3 +72,48 @@ async function mergeStyles(src, dst) {
   }
 }
 
+function getTemplate() {
+  return readFile(htmlTemplatePath);
+}
+
+async function getComponents() {
+  let componentName, componentData;
+  try {
+    const files = await readdir(htmlComponentsPath, { withFileTypes: true });
+    for (const file of files) {
+      if (file.isFile()) {
+        componentData = await readFile(path.resolve(htmlComponentsPath, file.name));
+        componentName = file.name.replace(/.html/g, '');
+        components[componentName] = componentData.toString();
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function build(template) {
+  return new Promise((res) => {
+    for (let component in components) {
+      template = template.replace(
+        new RegExp(`{{${component}}}`, 'g'),
+        components[component]
+      );
+    }
+    if (template.match(new RegExp('{{(.*?)}}', 'g'))){
+      console.log('not all componets build coz of componet absent');
+    }else{
+      writeFile(dstHtmlPath, template).then(res('build successfully!'));
+    }
+  });
+}
+
+function buildHtml(){
+  Promise.all([getTemplate(), getComponents()])
+    .then((res) => {
+      htmlTemplate = res[0].toString();
+      return build(htmlTemplate);
+    })
+    .then((res) => console.log(res))
+    .catch((err) => console.log(err.message));
+}
