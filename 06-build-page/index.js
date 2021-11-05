@@ -12,27 +12,27 @@ const bundleArr = [];
 const components = {};
 let htmlTemplate = '';
 
-mkDir(dstDirPath)
+delDir(dstDirPath)
+  .then(mkdir(dstDirPath, { recursive: true }))
   .then(copyDir(srcAssetsPath, path.resolve(dstDirPath, 'assets')))
   .then(mergeStyles(srcStylePath, dstStylePath))
   .then(buildHtml());
 
-async function mkDir(dirPath) {
+async function delDir(dirPath) {
   try {
-    const dstDir = await mkdir(dirPath, { recursive: true });
-    if (!dstDir) {
-      const files = await readdir(path.resolve(dirPath, 'assets'), { withFileTypes: true });
+    const isEmpty = await readdir(dirPath);
+    if (!isEmpty) {
+      const files = await readdir(dirPath, { withFileTypes: true });
       for (const file of files) {
         if (!file.isFile()) {
-          await rm(path.resolve(dirPath, 'assets', file.name), { recursive: true });
+          delDir(path.resolve(dirPath, file.name));
         }
       }
-      await rm(path.resolve(dirPath, 'assets'), { recursive: true });
-      await rm(dirPath, { recursive: true });
-      await mkdir(dirPath, { recursive: true });
+      await rm(dirPath);
     }
   } catch (err) {
-    err;
+    if (!(err.syscall === 'scandir'))
+      console.error(err);
   }
 }
 
@@ -100,15 +100,15 @@ function build(template) {
         components[component]
       );
     }
-    if (template.match(new RegExp('{{(.*?)}}', 'g'))){
+    if (template.match(new RegExp('{{(.*?)}}', 'g'))) {
       console.log('not all componets build coz of componet absent');
-    }else{
+    } else {
       writeFile(dstHtmlPath, template).then(res('build successfully!'));
     }
   });
 }
 
-function buildHtml(){
+function buildHtml() {
   Promise.all([getTemplate(), getComponents()])
     .then((res) => {
       htmlTemplate = res[0].toString();
