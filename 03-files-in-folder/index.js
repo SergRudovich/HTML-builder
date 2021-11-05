@@ -11,7 +11,7 @@ const dirPath = path.resolve(__dirname, 'secret-folder');
       if (file.isFile()) {
         stat(path.resolve(dirPath, file.name), (err, stats) => {
           console.log(
-            `${String(file.name).replace('.', ' - ')} - ${stats.size} byte`
+            `${path.basename(file.name).replace(path.extname(file.name), '')} - ${path.extname(file.name).replace('.', '')} - ${stats.size} byte`
           );
         });
       }

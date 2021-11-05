@@ -81,7 +81,7 @@ async function getComponents() {
   try {
     const files = await readdir(htmlComponentsPath, { withFileTypes: true });
     for (const file of files) {
-      if (file.isFile() && (file.name.substring(file.name.length - 5)) === '.html') {
+      if (file.isFile() && path.extname(file.name) === '.html') {
         componentData = await readFile(path.resolve(htmlComponentsPath, file.name));
         componentName = file.name.replace(/.html/g, '');
         components[componentName] = componentData.toString();
